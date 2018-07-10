@@ -4,6 +4,9 @@ onto the device.  This function supports either merging the configuration with
 the current active configuration or replacing the current active configuration
 with the provided configuration file.  
 
+The `load_config` function will return the full configuration diff in the
+`ios_diff` fact.
+
 NOTE: When performing a configuration replace function be sure to specify the
 entire configuration to be loaded otherwise you could end up not being able to
 reconnect to your IOS device after the configuration has been loaded.

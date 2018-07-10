@@ -2,6 +2,14 @@
 ios
 ===============================
 
+v1.0.1
+======
+
+Minor Changes
+-------------
+
+- the ``load_config`` function will now return the full config diff
+
 v1.0.0
 ======
 
