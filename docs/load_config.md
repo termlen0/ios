@@ -24,7 +24,7 @@ Below is an example of calling the `load_config` function from the playbook.
   roles:
     - name privateip.ios
       function: load_config
-      src: files/ios.cfg
+      config_file: files/ios.cfg
 ```
 
 The above playbook will load the specified configuration file onto each device
@@ -42,14 +42,17 @@ In order to replace the device's active configuration, set the value of the
   roles:
     - name privateip.ios
       function: load_config
-      src: files/ios.cfg
-      config_replace: yes
+      config_file: files/ios.cfg
+      replace: yes
 ```
 
-### Copying the new configuration to startup
-When the new configuration is loaded onto the device, it is not, by default,
-copied to the startup configuration.  To enable this capability in the
-`load_config` function, simple set the value of `save_config` to `True`.
+### How to load configuration text
+The `load_config` function also supports passing the configuration text
+directly into the task list for loading onto the target device instead of
+having to provide a file name. 
+
+In order to pass the configuration as a text string, use the `config_text`
+argument instead such as below.
 
 ```
 - hosts: cisco_ios
@@ -57,9 +60,11 @@ copied to the startup configuration.  To enable this capability in the
   roles:
     - name privateip.ios
       function: load_config
-      src: files/ios.cfg
-      save_config: yes
+      config_text: "{{ lookup('file', 'ios01.cfg') }}"
+      replace: yes
 ```
+
+
 
 ### Implement using tasks
 The `load_config` function can also be implemented in the `tasks` for execution
@@ -75,13 +80,30 @@ shown below.
         name: privateip.ios
         tasks_from: load_config
       vars:
-        src: files/ios.cfg
-        config_replace: yes
+        config_file: files/ios.cfg
+        replace: yes
 ```
 
 ## Arguments
 
-### config_replace
+### config_file
+
+Specifies the relative or absolute path to the IOS configuration file to load
+into the target the device.  The contents of the file should be IOS
+configuration statements.  This argument is mutually exclusive with
+`config_text`.
+
+The defautl value is `None`
+
+### config_text
+
+Specifies the configuration text to load into the remote device.  The text
+should be provided as a single configuration string with line breaks between
+lines.  This argument is mutually exclusive with the `config_file` argument.
+
+The default value is `None`
+
+### replace
 
 Specifies whether or not the source configuration should replace the current
 active configuration on the target IOS device.  When this value is set to
@@ -90,22 +112,6 @@ this value is set to True, the source configuration will replace the current
 active configuration
 
 The default value is `False`
-
-### config_save
-
-Specifies whether or not to copy the updated active configuration to the device
-startup configuration.  When this value is set to `True` the configuration is
-copied to the startup configuration and when this value is `False` the
-configuration is not copied to the startup configuration.  Note this setting
-only applies if the configuration is updated.
-
-The default value is `False`
-
-### source
-
-Specifes the relative or absolute path to the device configuration to load on
-to the target device.  This is a required argument for the `load_config`
-function.
 
 ## Notes
 None

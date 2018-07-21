@@ -1,84 +1,17 @@
 ---
-- name: validate required connection is configured
-  fail:
-    msg: "expected connection value to be set to network_cli, got {{ ansible_connection }}"
-  when: ansible_connection != 'network_cli'
-
-- name: validate required src is provided
-  fail:
-    msg: "missing required value: src"
-  when: not ios_config_file
-
-- name: load the source configuration file
+- name: load config file contents
   set_fact:
-    src_config: "{{ lookup('file', ios_config_file) }}"
+    ios_config_text: "{{ lookup('network_template', ios_config_file) }}"
+  when: ios_config_file
 
-- name: get the current active configuration
-  cli:
-    command: show running-config
-  register: ios_configuration
+- name: perform configuration replace on device
+  include_tasks: configure.yaml
+  when: ios_config_replace
+  vars:
+    ios_configuration_tasks: includes/config_replace.yaml
 
-- name: set the configuration fact for ios
-  set_fact:
-    ios_configuration: "{{ ios_configuration.stdout }}"
-
-- name: enable the ios scp server
-  ios_config:
-    lines: ip scp server enable
-  when: "'ip scp server enable' not in ios_configuration "
-
-- name: set config diff
-  set_fact:
-    ios_config_diff: "{{ lookup('netcfg_diff', src_config, have=ios_configuration, ignore_lines=['^!']) }}"
-
-- name: copy configuration to device
-  net_put:
-    src: "{{ ios_config_file }}"
-    dest: "flash:/ansible"
-  when: ios_config_diff | length > 0 and not ansible_check_mode
-
-- name: copy running-config to _tmp_ansible
-  ios_command:
-    commands:
-      - command: copy running-config flash:_tmp_ansible
-        prompt: ["? "]
-        answer: _tmp_ansible
-  when: ios_config_diff | length > 0 and not ansible_check_mode
-
-- name: generate ios diff
-  cli:
-    command: show archive config differences flash:ansible flash:_tmp_ansible
-  register: ios_diff
-  when: ios_config_diff | length > 0 and not ansible_check_mode
-
-- name: set the ios_diff fact
-  set_fact:
-    ios_diff: "{{ ios_diff.stdout | default(None) }}"
-
-- name: replace current active configuration with uploaded configuration
-  cli:
-    command: "config replace flash:/ansible force"
-  when: ios_config_replace and ios_config_diff | length > 0 and not ansible_check_mode
-
-- name: merge uploaded configuration with current active configuration
-  ios_command:
-    commands:
-      - command: "copy flash:/ansible running-config"
-        prompt: ["? "]
-        answer: "running-config"
-  when: not ios_config_replace and ios_config_diff | length > 0 and not ansible_check_mode
-
-- name: remove uploaded configuration
-  cli:
-    command: "delete /force flash:/ansible"
-  when: not ios_keep_remote_config and ios_config_diff | length > 0 and not ansible_check_mode
-
-- name: remove temp running-config
-  cli:
-    command: "delete /force flash:/_tmp_ansible"
-  when: ios_config_diff | length > 0 and not ansible_check_mode
-
-- name: save active configuration to startup
-  cli:
-    command: "copy running-config startup-config"
-  when: ios_save_running_config and not ansible_check_mode
+- name: perform configuration merge on device
+  include_tasks: configure.yaml
+  when: not ios_config_replace
+  vars:
+    ios_configuration_tasks: includes/config_terminal.yaml

@@ -2,6 +2,16 @@
 ios
 ===============================
 
+devel
+=====
+
+Major Changes
+-------------
+
+- complete refactoring of `load_config` to support merge and replace better
+
+
+
 v1.0.1
 ======
 

@@ -1,12 +1,17 @@
 ---
 # defaults file for privateip.ios
 #
-ios_config_replace: "{{ config_replace | default(False) }}"
-ios_keep_remote_config: no
-ios_save_running_config: "{{ save_config | default(False) }}"
+ios_working_dir: ~/.ansible/ios
 
-ios_config_file: "{{ src }}"
+ios_config_file: "{{ config_file | default(None) }}"
+ios_config_text: "{{ config_text | default(None) }}"
+ios_config_replace: "{{ replace | default(False) }}"
+ios_config_working_dir: ~/.ansible/ios
+ios_config_temp_config_file: tmp_ansible_config
+ios_config_checkpoint_filename: chk_ansible
 
 ios_config_source:
   running: show running-config
   startup: show startup-config
+
+ios_rollback_enabled: true
